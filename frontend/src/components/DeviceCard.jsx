@@ -1,3 +1,16 @@
+import React, { useState } from 'react';
+
+// Komponen lokal untuk baris data (tidak berubah)
+const SensorRow = ({ icon, label, value, valueColor = "text-gray-900" }) => (
+  <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+    <div className="flex items-center gap-3 text-sm text-gray-600">
+      <i className={`${icon} fa-fw text-blue-500`}></i>
+      <span>{label}</span>
+    </div>
+    <span className={`text-sm font-bold ${valueColor}`}>{value}</span>
+  </div>
+);
+
 export default function DeviceCard({
   name,
   block,
@@ -6,79 +19,98 @@ export default function DeviceCard({
   ph,
   temperature,
   humidity,
-  npk,
   lastUpdate,
+  history, // Prop history ditambahkan kembali
 }) {
+  // State untuk mengontrol tampilan riwayat
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Fungsi untuk toggle state saat kartu diklik
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
   const batteryColor =
     battery > 50 ? "text-green-500" : battery > 20 ? "text-yellow-500" : "text-red-500";
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 flex flex-col min-h-[350px]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
-        <div className="space-y-0.5 mb-2 sm:mb-0">
-          <h3 className="text-base sm:text-lg font-bold">{name}</h3>
-          <p className="text-xs sm:text-sm text-gray-500">{block}</p>
+    <div 
+      className="bg-white rounded-2xl shadow-md p-4 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg"
+      onClick={handleToggle} // Tambahkan onClick di kartu utama
+    >
+      {/* Header Kartu */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800">{name}</h3>
+          <p className="text-sm text-gray-500">{block}</p>
         </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <i className={`fas fa-signal ${online ? "text-green-500" : "text-gray-400"} text-sm`}></i>
-          <span className={`${online ? "text-green-600" : "text-gray-500"}`}>
+        <div className="flex items-center gap-2 text-sm">
+          <i className={`fas fa-circle text-xs ${online ? "text-green-500 animate-pulse" : "text-gray-400"}`}></i>
+          <span className={`${online ? "text-gray-700" : "text-gray-500"}`}>
             {online ? "Online" : "Offline"}
           </span>
         </div>
       </div>
 
-      {/* Battery */}
-      <div className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 text-xs sm:text-sm mb-3">
-        <div className={`flex items-center gap-2 ${batteryColor}`}>
-          <i className="fas fa-battery-half text-sm"></i>
-          <span>Baterai</span>
-        </div>
-        <div className={`font-semibold ${batteryColor}`}>{battery}%</div>
+      {/* Daftar data sensor vertikal */}
+      <div className="bg-gray-50/50 rounded-lg p-3 mb-4">
+        <SensorRow icon="fas fa-battery-half" label="Baterai" value={`${battery}%`} valueColor={batteryColor} />
+        <SensorRow icon="fas fa-temperature-half" label="Suhu" value={`${temperature}°C`} />
+        <SensorRow icon="fas fa-droplet" label="Kelembaban" value={`${humidity}%`} />
+        <SensorRow icon="fas fa-flask" label="pH Tanah" value={ph} />
       </div>
 
-      {/* Sensor Data */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 text-xs sm:text-sm">
-        <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-2 text-blue-500 mb-1">
-            <i className="fas fa-flask text-sm"></i>
-            <span>pH Tanah</span>
+      {/* BAGIAN BARU: Tampilan Riwayat (muncul saat isOpen true) */}
+      {isOpen && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h4 className="font-bold text-sm text-gray-700 mb-2">Riwayat Pengambilan Data</h4>
+          <div className="overflow-y-auto max-h-48 text-xs">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                  <th className="p-2">Waktu</th>
+                  <th className="p-2">Suhu</th>
+                  <th className="p-2">Lembab</th>
+                  <th className="p-2">pH</th>
+                  <th className="p-2">Lokasi</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600">
+                {history && history.length > 0 ? (
+                  history.map((record, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="p-2 whitespace-nowrap">{record.timestamp}</td>
+                      <td className="p-2">{record.temperature}°C</td>
+                      <td className="p-2">{record.humidity}%</td>
+                      <td className="p-2">{record.ph}</td>
+                      <td className="p-2 whitespace-nowrap">{`${record.gps_lat}, ${record.gps_long}`}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="p-4 text-center text-gray-400">
+                      Tidak ada riwayat data.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="text-base sm:text-lg font-semibold">{ph}</div>
         </div>
-        <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-2 text-blue-500 mb-1">
-            <i className="fas fa-temperature-half text-sm"></i>
-            <span>Suhu</span>
-          </div>
-          <div className="text-base sm:text-lg font-semibold">{temperature}°C</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-2 text-blue-500 mb-1">
-            <i className="fas fa-droplet text-sm"></i>
-            <span>Kelembaban</span>
-          </div>
-          <div className="text-base sm:text-lg font-semibold">{humidity}%</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-2 text-blue-500 mb-1">
-            <i className="fas fa-flask text-sm"></i>
-            <span>NPK</span>
-          </div>
-          <div className="flex flex-wrap gap-2 text-gray-600 text-[11px] sm:text-xs">
-            <div>N {npk.n}%</div>
-            <div>P {npk.p}%</div>
-            <div>K {npk.k}%</div>
-          </div>
-        </div>
-      </div>
+      )}
+      {/* AKHIR BAGIAN RIWAYAT */}
 
-      {/* Footer */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] sm:text-xs text-gray-400">
-        <div className="mb-1 sm:mb-0">Pembaruan: {lastUpdate}</div>
-        <div className="flex gap-3 text-sm">
-          <button><i className="fas fa-repeat"></i></button>
-          <button><i className="fas fa-gear"></i></button>
+      {/* Footer Kartu */}
+      <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-4">
+        <div className="flex items-center gap-2">
+            <i className="far fa-clock"></i>
+            <span>Pembaruan: {lastUpdate}</span>
+        </div>
+        <div className="flex items-center gap-3 text-base">
+          <button className="hover:text-blue-500 focus:outline-none"><i className="fas fa-repeat"></i></button>
+          <button className="hover:text-blue-500 focus:outline-none"><i className="fas fa-gear"></i></button>
+          {/* Ikon panah sebagai indikator buka/tutup */}
+          <i className={`fas fa-chevron-down transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
         </div>
       </div>
     </div>
