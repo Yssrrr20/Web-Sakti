@@ -10,8 +10,9 @@ const { parse } = require('csv-parse');
 const db = require('./db');
 const sensorRoutes = require('./routes/sensorReadings');
 const receiverRoutes = require('./routes/receiverRoutes');
+// --- PENAMBAHAN 1: Import route baru ---
+const summaryRoutes = require('./routes/summaryRoutes');
 
-// ... (semua kode inisialisasi express, cors, direktori tetap sama) ...
 const app = express();
 const port = 5000; 
 
@@ -56,10 +57,9 @@ client.on('close', () => console.log('Koneksi MQTT ditutup.'));
 
 
 // ===== LOGIKA BATCHING BARU =====
-
-let messageBuffer = []; // Buffer untuk menampung pesan yang masuk
-let processingTimeout = null; // Timer untuk memproses batch
-const BATCH_WINDOW_MS = 3000; // Tunggu 3 detik untuk pesan lain sebelum memproses
+let messageBuffer = [];
+let processingTimeout = null; 
+const BATCH_WINDOW_MS = 3000;
 
 async function processBatch() {
     if (messageBuffer.length === 0) return;
@@ -110,14 +110,9 @@ async function processBatch() {
         }
         console.log(`Selesai menyimpan ${finalRecords.length} record dari batch ke database.`);
         
-        // ===== PERUBAHAN DI SINI =====
-        // Membuat file CSV bersih dari batch ini TANPA HEADER
         const csvRows = finalRecords.map(row => [row.sensor_id, row.temperature, row.kelembapan, row.pH, row.gps_lat, row.gps_long, new Date(row.timestamp).toISOString()].join(','));
-        // Langsung gabungkan baris-baris data, tanpa variabel header
         const csvContent = csvRows.join('\n');
         await fs.writeFile(processedFilePath, csvContent);
-        // ============================
-
         console.log(`File CSV batch (tanpa header) berhasil disimpan di: ${processedFilePath}`);
 
         await fs.unlink(rawFilePath);
@@ -138,16 +133,12 @@ async function processBatch() {
 
 client.on('message', async (topic, message) => {
     if (topic === MQTT_TOPIC_CSV) {
-        // 1. Tambahkan pesan ke buffer
         messageBuffer.push(message.toString());
         console.log(`Pesan diterima dan dimasukkan ke buffer (Total di buffer: ${messageBuffer.length})`);
 
-        // 2. Hapus timer lama jika ada
         if (processingTimeout) {
             clearTimeout(processingTimeout);
         }
-
-        // 3. Set timer baru. Jika tidak ada pesan lain dalam 3 detik, proses batch.
         processingTimeout = setTimeout(processBatch, BATCH_WINDOW_MS);
     }
 });
@@ -161,6 +152,8 @@ app.get('/', (req, res) => {
 
 app.use('/api', sensorRoutes);
 app.use('/api/receiver', receiverRoutes);
+// --- PENAMBAHAN 2: Daftarkan route baru ke Express ---
+app.use('/api/summary', summaryRoutes);
 
 
 // --- Jalankan Server & Penanganan Sinyal Cleanup ---
@@ -168,16 +161,14 @@ app.listen(port, () => {
     console.log(`Backend API aktif di http://localhost:${port}`);
 });
 
-// ... (fungsi cleanup tetap sama) ...
 const cleanup = async (signal) => {
     console.log(`\nMenerima sinyal ${signal}. Memulai proses cleanup...`);
     if(processingTimeout) clearTimeout(processingTimeout);
-    await processBatch(); // Coba proses sisa buffer sebelum keluar
+    await processBatch();
     
     const cleanupTimeout = 3000;
 
     const cleanupPromise = new Promise(async (resolve, reject) => {
-        // ... (isi cleanup promise tetap sama) ...
         try {
             await Promise.allSettled([
                 new Promise((resolve_mqtt, reject_mqtt) => {

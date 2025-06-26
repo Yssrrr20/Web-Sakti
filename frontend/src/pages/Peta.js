@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import Card from '../components/Card';
+import DashboardStats from '../components/DashboardStats';
 import Map from '../components/Map';
 import ParameterTanahChart from '../components/ParameterTanahChart';
 import MonitoringBlockTable from '../components/MonitoringBlockTable';
@@ -68,11 +68,8 @@ const PetaPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Card 4 status di bagian atas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card title="Total Pohon" count={1234} icon="fa-solid fa-tree" color="bg-blue-500" />
-        <Card title="Pohon Sehat" count={950} icon="fa-solid fa-leaf" color="bg-green-500" />
-        <Card title="Pohon Terinfeksi" count={150} icon="fa-solid fa-virus" color="bg-red-500" />
-        <Card title="Perangkat Aktif" count={23} icon="fa-solid fa-wifi" color="bg-purple-500" />
+      <div className="mb-6">
+        <DashboardStats />
       </div>
 
       {/* Grid untuk Peta dan Parameter Tanah */}

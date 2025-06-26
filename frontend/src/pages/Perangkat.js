@@ -51,7 +51,6 @@ const Perangkat = () => {
 
   // BAGIAN 2: Fungsi baru untuk menangani klik tombol dan membuat log contoh
   const handleSendData = async () => {
-    // 1. Atur log awal dan status loading
     setLogMessages([`[${new Date().toLocaleTimeString()}] [INFO] Mengirim perintah ke backend untuk memulai pengiriman file CSV...`]);
     
     try {
@@ -61,7 +60,6 @@ const Perangkat = () => {
       });
 
       if (!response.ok) {
-        // Tangani jika backend mengembalikan error
         throw new Error(`Server merespons dengan status: ${response.status}`);
       }
 

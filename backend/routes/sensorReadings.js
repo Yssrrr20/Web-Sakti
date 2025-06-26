@@ -96,7 +96,7 @@ router.post('/send_csv_to_training', async (req, res) => {
   console.log('[TRAINING] Menerima perintah untuk mengirim file CSV...');
   
   // URL SERVER TRAINING 
-  const trainingServerUrl = 'http://192.168.186.6:9000/api/upload-soil';
+  const trainingServerUrl = 'http://192.168.197.6:9000/api/upload-soil';
 
   try {
     await fs.ensureDir(SENT_DIR);

@@ -1,5 +1,5 @@
 import React from 'react';
-import Card from '../components/Card';
+import DashboardStats from '../components/DashboardStats';
 import StatusKesehatan from './StatusKesehatan';
 import KondisiTanah from './KondisiTanah';
 import PerubahanParameter from './PerubahanParameter';
@@ -9,32 +9,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-white-100 p-6">
       {/* Card 4 status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card 
-          title="Total Pohon" 
-          count={1234} 
-          icon="fa-tree" 
-          color="bg-blue-500" 
-        />
-        <Card 
-          title="Pohon Sehat" 
-          count={950} 
-          icon="fa-leaf" 
-          color="bg-green-500" 
-        />
-        <Card 
-          title="Pohon Terinfeksi" 
-          count={150} 
-          icon="fa-virus" 
-          color="bg-red-500" 
-        />
-        <Card 
-          title="Perangkat Aktif" 
-          count={23} 
-          icon="fa-wifi" 
-          color="bg-purple-500" 
-        />
-      </div>
+      {/* Ganti 4 Card statis dengan satu komponen dinamis */}
+      <DashboardStats />
 
       {/* Parameter Lingkungan dan Status Kesehatan Pohon */}
       <div className="flex flex-col lg:flex-row mt-8 gap-6">
