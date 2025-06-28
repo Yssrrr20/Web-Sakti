@@ -10,14 +10,24 @@ const { parse } = require('csv-parse');
 const db = require('./db');
 const sensorRoutes = require('./routes/sensorReadings');
 const receiverRoutes = require('./routes/receiverRoutes');
-// --- PENAMBAHAN 1: Import route baru ---
 const summaryRoutes = require('./routes/summaryRoutes');
+const zoneRoutes = require('./routes/zoneRoutes');
+const soilRoutes = require('./routes/soilRoutes'); 
+const activityLogRoutes = require('./routes/activityLogRoutes');
+const tileServerRoutes = require('./routes/tileServerRoutes');
+
 
 const app = express();
 const port = 5000; 
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'http://localhost:3002',
+    'http://192.168.79.41:3000',
+    'https://8563-120-188-78-244.ngrok-free.app' // <-- TAMBAHKAN BARIS INI (Ganti IP jika perlu)
+  ],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -152,8 +162,11 @@ app.get('/', (req, res) => {
 
 app.use('/api', sensorRoutes);
 app.use('/api/receiver', receiverRoutes);
-// --- PENAMBAHAN 2: Daftarkan route baru ke Express ---
 app.use('/api/summary', summaryRoutes);
+app.use('/api/zones', zoneRoutes);
+app.use('/api/soil', soilRoutes);
+app.use('/api/activity', activityLogRoutes);
+app.use('/api/tiles', tileServerRoutes);
 
 
 // --- Jalankan Server & Penanganan Sinyal Cleanup ---

@@ -1,90 +1,88 @@
-import React from 'react';
+// pages/Dashboard.jsx
+import React, { useState, useEffect } from 'react';
 import DashboardStats from '../components/DashboardStats';
 import StatusKesehatan from './StatusKesehatan';
 import KondisiTanah from './KondisiTanah';
 import PerubahanParameter from './PerubahanParameter';
 import RiwayatAktivitas from './RiwayatAktivitas';
+import ParameterLingkungan from '../components/ParameterLingkungan';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'; // Tambahkan ini
 
 const Dashboard = () => {
-  return (
-    <div className="min-h-screen bg-white-100 p-6">
-      {/* Card 4 status */}
-      {/* Ganti 4 Card statis dengan satu komponen dinamis */}
-      <DashboardStats />
+    const [summaryData, setSummaryData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-      {/* Parameter Lingkungan dan Status Kesehatan Pohon */}
-      <div className="flex flex-col lg:flex-row mt-8 gap-6">
-        {/* Kolom kiri untuk Parameter Lingkungan */}
-        <div className="w-full lg:w-1/2">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">Parameter Lingkungan</h3>
-            
-            {/* Parameter Suhu */}
-            <div className="bg-slate-100 flex items-center mb-4 rounded-lg p-4">
-              <div className="w-10 h-10 bg-blue-200 text-blue-600 rounded-full flex items-center justify-center mr-4">
-                <i className="fas fa-thermometer-half text-xl"></i>
-               </div>
-              <div>
-                <p className="text-lg font-semibold text-gray-800">Suhu</p>
-                <p className="text-2xl font-bold text-blue-500">28 °C</p>
-              </div>
+    useEffect(() => {
+        const fetchSummaryData = async () => {
+            try {
+                // Gunakan API_BASE_URL
+                const response = await fetch(`${API_BASE_URL}/api/summary/stats`); // Ubah di sini
+                if (!response.ok) {
+                    throw new Error('Gagal memuat data dashboard');
+                }
+                const data = await response.json();
+                setSummaryData(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSummaryData();
+    }, []);
+
+    if (loading) {
+        return <div className="text-center p-10 text-gray-500">Memuat data dashboard...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center p-10 text-red-500">Error: {error}</div>;
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-6">
+            <DashboardStats data={summaryData} />
+
+            <div className="flex flex-col lg:flex-row mt-8 gap-6">
+                <div className="w-full lg:w-1/2">
+                    <ParameterLingkungan
+                        temperature={summaryData?.avgTemperature}
+                        ph={summaryData?.avgPh}
+                        humidity={summaryData?.avgHumidity}
+                    />
+                </div>
+                <div className="w-full lg:w-1/2">
+                    <div className="w-full flex justify-center items-center">
+                        <StatusKesehatan data={summaryData} />
+                    </div>
+                </div>
             </div>
 
-            {/* Parameter pH Tanah */}
-            <div className="bg-slate-100 flex items-center mb-4 rounded-lg p-4">
-              <div className="w-10 h-10 bg-blue-200 text-blue-600 rounded-full flex items-center justify-center mr-4">
-                <i className="fas fa-flask text-xl"></i>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-gray-800">pH Tanah</p>
-                <p className="text-2xl font-bold text-blue-500">6.5</p>
-              </div>
+            <div className="flex flex-col lg:flex-row mt-8 gap-6">
+                <div className="w-full lg:w-1/2">
+                    <div className="bg-white p-6 rounded-lg shadow-lg h-[450px] flex flex-col">
+                        <h3 className="text-xl font-semibold text-gray-700 mb-4 flex-shrink-0">Ringkasan Kondisi Zona</h3>
+                        <div className="overflow-y-auto flex-grow">
+                            <KondisiTanah />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full lg:w-1/2">
+                    <div className="bg-white p-6 rounded-lg shadow-lg h-[450px] flex flex-col">
+                        <h3 className="text-xl font-semibold text-gray-700 mb-4 flex-shrink-0">Perubahan Parameter Terkini</h3>
+                        <div className="overflow-y-auto flex-grow">
+                            <PerubahanParameter />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Parameter Kelembaban */}
-            <div className="bg-slate-100 flex items-center mb-4 rounded-lg p-4">
-              <div className="w-10 h-10 bg-blue-200 text-blue-600 rounded-full flex items-center justify-center mr-4">
-                <i className="fas fa-tint text-xl"></i>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-gray-800">Kelembaban</p>
-                <p className="text-2xl font-bold text-blue-500">75%</p>
-              </div>
-            </div>
-          </div>
+            <RiwayatAktivitas />
         </div>
-
-        {/* Kolom kanan untuk Status Kesehatan Pohon */}
-        <div className="w-full lg:w-1/2">
-          <div className="w-full flex justify-center items-center">
-            <StatusKesehatan /> 
-          </div>
-        </div>
-      </div>
-
-      {/* Menambahkan Kondisi Tanah dan Perubahan Parameter */}
-      <div className="flex flex-col lg:flex-row mt-8 gap-6">
-        {/* Kolom kiri untuk Kondisi Tanah */}
-        <div className="w-full lg:w-1/2">
-          <div className="bg-white p-6 rounded-lg shadow-lg h-[450px]">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">Kondisi Tanah</h3>
-            <KondisiTanah />
-          </div>
-        </div>
-
-        {/* Kolom kanan untuk Perubahan Parameter Terkini */}
-        <div className="w-full lg:w-1/2">
-          <div className="bg-white p-6 rounded-lg shadow-lg h-[450px] overflow-y-auto">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">Perubahan Parameter Terkini</h3>
-            <PerubahanParameter /> 
-          </div>
-        </div>
-      </div>
-
-      {/* Menambahkan Riwayat Aktivitas */}
-      <RiwayatAktivitas /> 
-    </div>
-  );
+    );
 };
 
 export default Dashboard;

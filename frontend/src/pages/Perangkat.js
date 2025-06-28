@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import FilterBar from '../components/FilterBar';
 import DeviceCard from '../components/DeviceCard';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 const Perangkat = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +14,7 @@ const Perangkat = () => {
   const [logMessages, setLogMessages] = useState(['[INFO] Menunggu perintah pengiriman...']);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/status_perangkat')
+    fetch(`${API_BASE_URL}/api/status_perangkat`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -55,7 +56,7 @@ const Perangkat = () => {
     
     try {
       // 2. Panggil endpoint baru di backend menggunakan POST
-      const response = await fetch('http://localhost:5000/api/send_csv_to_training', {
+       const response = await fetch(`${API_BASE_URL}/api/send_csv_to_training`, {
         method: 'POST',
       });
 

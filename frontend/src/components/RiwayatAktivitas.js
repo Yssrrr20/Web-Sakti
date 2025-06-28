@@ -1,54 +1,130 @@
-import React from 'react';
+// pages/RiwayatAktivitas.js
 
-const RiwayatAktivitas = () => {
-  const aktivitasData = [
-    { waktu: '09:45', aktivitas: 'Pembaruan Sensor', lokasi: 'Blok A', status: 'Selesai' },
-    { waktu: '09:30', aktivitas: 'Kalibrasi pH', lokasi: 'Blok B', status: 'Proses' },
-    { waktu: '09:15', aktivitas: 'Pengukuran Nutrisi', lokasi: 'Blok C', status: 'Selesai' },
-  ];
+import React, { useState, useEffect } from 'react';
 
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-lg mt-8">
-      <h3 className="text-xl font-semibold text-gray-700 mb-4">Riwayat Aktivitas</h3>
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
-      {/* Wrapper untuk membuat tabel scrollable di perangkat mobile */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="py-2 px-4 text-left text-gray-600">Waktu</th>
-              <th className="py-2 px-4 text-left text-gray-600">Aktivitas</th>
-              <th className="py-2 px-4 text-left text-gray-600">Lokasi</th>
-              <th className="py-2 px-4 text-left text-gray-600">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {aktivitasData.map((item, index) => (
-              <tr key={index} className="border-t">
-                <td className="py-2 px-4 text-gray-700">{item.waktu}</td>
-                <td className="py-2 px-4 text-gray-700">{item.aktivitas}</td>
-                <td className="py-2 px-4 text-gray-700">{item.lokasi}</td>
-                <td className="py-2 px-4">
-                  {/* Menambahkan warna berdasarkan status */}
-                  <span
-                    className={`inline-block px-3 py-1 text-white text-sm rounded-full ${
-                      item.status === 'Selesai'
-                        ? 'bg-green-500'
-                        : item.status === 'Proses'
-                        ? 'bg-yellow-500'
-                        : 'bg-gray-500'
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+// Helper function untuk format waktu relatif (misal: "5 menit yang lalu")
+function formatTimeAgo(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+    const minutes = Math.round(seconds / 60);
+    const hours = Math.round(minutes / 60);
+    const days = Math.round(hours / 24);
+
+    if (seconds < 60) return `${seconds} detik yang lalu`;
+    if (minutes < 60) return `${minutes} menit yang lalu`;
+    if (hours < 24) return `${hours} jam yang lalu`;
+    return `${days} hari yang lalu`;
+}
+
+// Helper function untuk ikon dan warna berdasarkan tipe kejadian
+const getEventStyle = (eventType, level) => {
+    switch (eventType) {
+        case 'ZONE_ANALYSIS':
+            return { icon: 'fa-solid fa-chart-area', color: 'text-purple-500' };
+        case 'FILE_RECEIVED':
+            return { icon: 'fa-solid fa-file-arrow-down', color: 'text-blue-500' };
+        case 'DATA_SENT_TO_TRAINING':
+            return { icon: 'fa-solid fa-file-arrow-up', color: 'text-orange-500' };
+        default:
+            // Jika tidak ada tipe spesifik, gunakan level sebagai penentu
+            switch (level) {
+                case 'SUCCESS':
+                    return { icon: 'fa-solid fa-check-circle', color: 'text-green-500' };
+                case 'WARNING':
+                    return { icon: 'fa-solid fa-triangle-exclamation', color: 'text-yellow-500' };
+                default:
+                    return { icon: 'fa-solid fa-circle-info', color: 'text-gray-500' };
+            }
+    }
 };
 
-export default RiwayatAktivitas;
+export default function RiwayatAktivitas() {
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                // Panggil API baru kita
+                const response = await fetch(`${API_BASE_URL}/api/activity/recent`);
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil riwayat aktivitas');
+                }
+                const data = await response.json();
+                setActivities(data);
+            } catch (err) {
+                setError(err.message);
+                console.error("Gagal fetch riwayat aktivitas:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchActivities();
+        // Set interval untuk me-refresh data secara otomatis setiap 1 menit
+        const intervalId = setInterval(fetchActivities, 60000);
+
+        // Cleanup interval saat komponen tidak lagi ditampilkan
+        return () => clearInterval(intervalId);
+    }, []);
+
+    const renderContent = () => {
+        if (loading) {
+            return <p className="text-center text-gray-500 py-4">Memuat riwayat aktivitas...</p>;
+        }
+
+        if (error) {
+            return <p className="text-center text-red-500 py-4">Gagal memuat data.</p>;
+        }
+
+        if (activities.length === 0) {
+            return <p className="text-center text-gray-500 py-4">Tidak ada aktivitas tercatat.</p>;
+        }
+
+        return (
+            <div className="overflow-x-auto">
+                <table className="min-w-full table-auto">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kejadian</th>
+                            <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {activities.map((item) => {
+                            const style = getEventStyle(item.event_type, item.level);
+                            return (
+                                <tr key={item.id} className="hover:bg-gray-50">
+                                    <td className="py-4 px-4">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center text-xl">
+                                                <i className={`${style.icon} ${style.color}`}></i>
+                                            </div>
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-gray-900">{item.event_type.replace(/_/g, ' ')}</div>
+                                                <div className="text-sm text-gray-500">{item.message}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{formatTimeAgo(item.timestamp)}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-lg mt-8">
+            <h3 className="text-xl font-semibold text-gray-700 mb-4">Riwayat Aktivitas Sistem</h3>
+            {renderContent()}
+        </div>
+    );
+};
