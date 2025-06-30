@@ -5,7 +5,6 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
 import { styled } from '@mui/material/styles';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
 const size = {
   width: 290,
@@ -40,7 +39,7 @@ export default function StatusKesehatan() {
       try {
         setLoading(true);
         // Panggil endpoint statistik kita (menggunakan proxy)
-        const response = await fetch(`${API_BASE_URL}/api/summary/stats`);
+        const response = await fetch(`/api/summary/stats`);
         if (!response.ok) {
           throw new Error(`Gagal mengambil data: ${response.statusText}`);
         }

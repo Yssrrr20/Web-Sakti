@@ -2,25 +2,69 @@
 
 const express = require('express');
 const router = express.Router();
-const dbConnection = require('../db');
+const dbConnection = require('../db'); // Asumsi db.js sudah mengelola koneksi database
 
-// --- Endpoint untuk mengambil zona yang sudah ada (tidak berubah) ---
+/**
+ * @route   GET /api/zones
+ * @desc    Mengambil daftar semua zona (blok) dari database.
+ * Data ini akan digunakan sebagai daftar tugas di halaman Analisis.
+ * Mengambil dari tabel `map_zones` dan memetakan untuk frontend.
+ * @access  Public
+ */
 router.get('/', async (req, res) => {
     try {
-        const [zones] = await dbConnection.query("SELECT * FROM map_zones ORDER BY id");
-        res.json(zones);
+        // Query untuk mengambil data dari tabel 'map_zones'.
+        // Kita perlu menghitung titik tengah zona dari batas-batasnya (bounds)
+        // karena Analisis.jsx mengharapkan 'lat' dan 'lon' tunggal untuk koordinat tugas.
+        const query = `
+            SELECT
+                id,
+                zone_name,
+                label,
+                bounds_sw_lat,
+                bounds_sw_lng,
+                bounds_ne_lat,
+                bounds_ne_lng,
+                (bounds_sw_lat + bounds_ne_lat) / 2 AS lat,    -- Menghitung titik tengah lintang
+                (bounds_sw_lng + bounds_ne_lng) / 2 AS \`long\`, -- Menghitung titik tengah bujur
+                tree_count_total,
+                tree_count_healthy,
+                tree_count_infected,
+                tree_count_potential,
+                avg_ph,
+                avg_temperature,
+                avg_humidity
+            FROM map_zones
+            ORDER BY id ASC;
+        `;
+
+        const [results] = await dbConnection.query(query);
+
+        // Jika ada data, kirim sebagai JSON
+        if (results.length > 0) {
+            res.json(results);
+        } else {
+            // Jika tidak ada zona ditemukan
+            res.status(200).json([]); // Kirim array kosong jika tidak ada data
+        }
+
     } catch (error) {
-        console.error("Gagal mengambil data zona:", error);
-        res.status(500).json({ error: "Gagal mengambil data zona." });
+        console.error("Error saat mengambil data zona:", error);
+        res.status(500).json({ error: "Gagal mengambil data zona dari server." });
     }
 });
 
 
-// --- Endpoint untuk MEMBUAT zona baru (DIPERBAIKI) ---
+/**
+ * @route   POST /api/zones/generate-grid
+ * @desc    Endpoint untuk MEMBUAT zona baru berdasarkan data pohon dan tanah.
+ * Logika ini berasal dari kode yang Anda berikan sebelumnya.
+ * @access  Public
+ */
 router.post('/generate-grid', async (req, res) => {
     try {
         console.log("[ZONING] Proses pembuatan zona dimulai...");
-        const GRID_SIZE_METERS = 50; 
+        const GRID_SIZE_METERS = 50;
 
         const [trees] = await dbConnection.query("SELECT gps_lat, gps_long, status FROM trees");
         const [soils] = await dbConnection.query("SELECT gps_lat, gps_long, ph, temperature, humidity FROM soil_data");
@@ -38,18 +82,18 @@ router.post('/generate-grid', async (req, res) => {
 
         const lat_degree_per_meter = 1 / 111111;
         const gridHeight = GRID_SIZE_METERS * lat_degree_per_meter;
-        
+
         const zoneData = [];
         let zoneCounter = 1;
 
         for (let lat = minLat; lat < maxLat; lat += gridHeight) {
             const lng_degree_per_meter = 1 / (111320 * Math.cos(lat * Math.PI/180));
             const gridWidth = GRID_SIZE_METERS * lng_degree_per_meter;
-            
+
             for (let lng = minLng; lng < maxLng; lng += gridWidth) {
                 const zoneBounds = { sw_lat: lat, sw_lng: lng, ne_lat: lat + gridHeight, ne_lng: lng + gridWidth };
                 const treesInZone = trees.filter(t => t.gps_lat >= zoneBounds.sw_lat && t.gps_lat < zoneBounds.ne_lat && t.gps_long >= zoneBounds.sw_lng && t.gps_long < zoneBounds.ne_lng);
-                
+
                 if (treesInZone.length > 0) {
                     const soilsInZone = soils.filter(s => s.gps_lat >= zoneBounds.sw_lat && s.gps_lat < zoneBounds.ne_lat && s.gps_long >= zoneBounds.sw_lng && s.gps_long < zoneBounds.ne_lng);
 
@@ -66,7 +110,7 @@ router.post('/generate-grid', async (req, res) => {
 
                     let label = "Normal";
                     const infected_percentage = (infected / treesInZone.length) * 100;
-                    
+
                     if (infected_percentage > 10) {
                         label = "Zona Prioritas Merah";
                     } else if (avg_ph && avg_ph < 5.5) {
@@ -74,7 +118,7 @@ router.post('/generate-grid', async (req, res) => {
                     } else if (infected_percentage === 0 && potential === 0) {
                         label = "Zona Sehat";
                     }
-                    
+
                     zoneData.push([
                         `Zona ${zoneCounter}`,
                         label,
@@ -86,14 +130,10 @@ router.post('/generate-grid', async (req, res) => {
                 }
             }
         }
-        
-        // --- PERBAIKAN LOGIKA DI SINI ---
 
-        // 1. Definisikan variabel 'zonesCreatedCount' SEBELUM digunakan
         const zonesCreatedCount = zoneData.length;
-
         console.log(`[ZONING] Menyiapkan ${zonesCreatedCount} zona untuk disimpan...`);
-        
+
         // Hapus zona lama dan masukkan yang baru
         await dbConnection.query("TRUNCATE TABLE map_zones");
         if (zonesCreatedCount > 0) {
@@ -105,7 +145,7 @@ router.post('/generate-grid', async (req, res) => {
         }
         console.log(`[ZONING] Proses penyimpanan zona selesai.`);
 
-        // 2. Lakukan logging ke 'activity_log' SEBELUM mengirim respons
+        // Lakukan logging ke 'activity_log' SEBELUM mengirim respons
         const logMessage = `Analisis zona baru berhasil dibuat, menghasilkan ${zonesCreatedCount} zona.`;
         const logDetails = JSON.stringify({ zones_created: zonesCreatedCount });
         await dbConnection.query(
@@ -114,7 +154,7 @@ router.post('/generate-grid', async (req, res) => {
         );
         console.log("[LOGGING] Aktivitas analisis zona berhasil dicatat.");
 
-        // 3. Kirim respons ke klien di akhir proses
+        // Kirim respons ke klien di akhir proses
         res.status(201).json({ message: logMessage });
 
     } catch (error) {

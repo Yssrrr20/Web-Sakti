@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
 // Helper function untuk format waktu relatif (misal: "5 menit yang lalu")
 function formatTimeAgo(dateString) {
@@ -51,7 +50,7 @@ export default function RiwayatAktivitas() {
         const fetchActivities = async () => {
             try {
                 // Panggil API baru kita
-                const response = await fetch(`${API_BASE_URL}/api/activity/recent`);
+                const response = await fetch(`/api/activity/recent`);
                 if (!response.ok) {
                     throw new Error('Gagal mengambil riwayat aktivitas');
                 }

@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const csv = require('csv-parser');
+const csv = require('csv-parser'); // Pastikan csv-parser diinstal (npm install csv-parser)
 
 /**
  * Memproses file CSV berisi data pohon, mengubahnya sesuai aturan,
@@ -125,6 +125,9 @@ function processSoilCsvAndInsert(filePath, dbConnection) {
                 const sensorSerialNumber = row.sensor_id;
                 const timestamp = row.timestamp ? new Date(row.timestamp) : null;
 
+                // Pastikan kolom `status_prediksi` juga diambil dari `row`
+                const statusPrediksi = row.status_prediksi || null; // Ambil kolom status_prediksi
+
                 if (!sensorSerialNumber || !timestamp || isNaN(timestamp.getTime())) {
                     console.warn(`[SOIL SKIP] Baris dilewati karena sensor_id atau timestamp tidak valid.`, row);
                     skippedRowCount++;
@@ -134,11 +137,12 @@ function processSoilCsvAndInsert(filePath, dbConnection) {
                 dataToInsert.push({
                     serial_number: sensorSerialNumber,
                     temperature: parseFloat(row.temperature),
-                    humidity: parseFloat(row.kelembapan),
+                    humidity: parseFloat(row.kelembapan), // Asumsi kolom CSV adalah 'kelembapan'
                     ph: parseFloat(row.pH),
                     gps_lat: parseFloat(row.gps_lat),
                     gps_long: parseFloat(row.gps_long),
-                    timestamp: timestamp.toISOString().slice(0, 19).replace('T', ' ')
+                    timestamp: timestamp.toISOString().slice(0, 19).replace('T', ' '),
+                    status_prediksi: statusPrediksi // <-- Tambahkan ini ke data yang akan disisipkan
                 });
                 processedRowCount++;
             })
@@ -170,7 +174,17 @@ function processSoilCsvAndInsert(filePath, dbConnection) {
                                 console.warn(`[SOIL SKIP] Sensor dengan serial number ${item.serial_number} tidak ditemukan di database.`);
                                 return null;
                             }
-                            return [sensorId, item.temperature, item.humidity, item.ph, item.gps_lat, item.gps_long, item.timestamp];
+                            // Pastikan urutan dan jumlah kolom sesuai dengan SQL INSERT
+                            return [
+                                sensorId,
+                                item.temperature,
+                                item.humidity,
+                                item.ph,
+                                item.gps_lat,
+                                item.gps_long,
+                                item.timestamp,
+                                item.status_prediksi // <-- Tambahkan ini ke array nilai
+                            ];
                         })
                         .filter(item => item !== null);
 
@@ -179,8 +193,9 @@ function processSoilCsvAndInsert(filePath, dbConnection) {
                         return resolve({ message: "Gagal, semua data sensor tidak terdaftar di database." });
                     }
                     
+                    // UBAH: Tambahkan kolom `status_prediksi` ke query INSERT
                     const sqlQuery = `
-                        INSERT INTO soil_data (sensor_id, temperature, humidity, ph, gps_lat, gps_long, timestamp)
+                        INSERT INTO soil_data (sensor_id, temperature, humidity, ph, gps_lat, gps_long, timestamp, status_prediksi)
                         VALUES ?
                     `;
 

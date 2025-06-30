@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
 // Helper function untuk format waktu relatif
 function formatTimeAgo(dateString) {
@@ -39,7 +38,7 @@ export default function PerubahanParameter() {
     useEffect(() => {
         const fetchRecentReadings = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/soil/recent`);
+                const response = await fetch(`/api/soil/recent`);
                 if (!response.ok) {
                     throw new Error('Gagal mengambil data terkini');
                 }

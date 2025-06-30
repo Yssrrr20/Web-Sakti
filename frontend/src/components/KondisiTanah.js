@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
-
 
 // Helper function untuk mendapatkan warna dan teks status yang sesuai
 const getZoneStyle = (label) => {
@@ -27,7 +25,7 @@ export default function KondisiTanah() {
     useEffect(() => {
         const fetchZoneData = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/zones`);
+                const response = await fetch(`/api/zones`);
                 if (!response.ok) {
                     throw new Error('Gagal mengambil data zona');
                 }

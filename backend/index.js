@@ -15,7 +15,8 @@ const zoneRoutes = require('./routes/zoneRoutes');
 const soilRoutes = require('./routes/soilRoutes'); 
 const activityLogRoutes = require('./routes/activityLogRoutes');
 const tileServerRoutes = require('./routes/tileServerRoutes');
-
+const mapDataRoutes = require('./routes/mapDataRoutes');
+const sensorSummaryRoutes = require('./routes/sensorRoutes');
 
 const app = express();
 const port = 5000; 
@@ -26,7 +27,7 @@ const corsOptions = {
     'http://localhost:3001', 
     'http://localhost:3002',
     'http://192.168.79.41:3000',
-    'https://8563-120-188-78-244.ngrok-free.app' // <-- TAMBAHKAN BARIS INI (Ganti IP jika perlu)
+    'https://f9a0-120-188-78-222.ngrok-free.app' // <-- TAMBAHKAN BARIS INI (Ganti IP jika perlu)
   ],
   optionsSuccessStatus: 200
 };
@@ -167,6 +168,9 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/soil', soilRoutes);
 app.use('/api/activity', activityLogRoutes);
 app.use('/api/tiles', tileServerRoutes);
+console.log("[index.js] Memasang mapDataRoutes di /api/map-data");
+app.use('/api/map-data', mapDataRoutes);
+app.use('/api/sensors', sensorSummaryRoutes);
 
 
 // --- Jalankan Server & Penanganan Sinyal Cleanup ---

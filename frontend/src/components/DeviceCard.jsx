@@ -42,19 +42,14 @@ export default function DeviceCard({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-800">{name}</h3>
-          <p className="text-sm text-gray-500">{block}</p>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <i className={`fas fa-circle text-xs ${online ? "text-green-500 animate-pulse" : "text-gray-400"}`}></i>
-          <span className={`${online ? "text-gray-700" : "text-gray-500"}`}>
-            {online ? "Online" : "Offline"}
-          </span>
+          
         </div>
       </div>
 
       {/* Daftar data sensor vertikal */}
       <div className="bg-gray-50/50 rounded-lg p-3 mb-4">
-        <SensorRow icon="fas fa-battery-half" label="Baterai" value={`${battery}%`} valueColor={batteryColor} />
         <SensorRow icon="fas fa-temperature-half" label="Suhu" value={`${temperature}°C`} />
         <SensorRow icon="fas fa-droplet" label="Kelembaban" value={`${humidity}%`} />
         <SensorRow icon="fas fa-flask" label="pH Tanah" value={ph} />

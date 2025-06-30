@@ -1,20 +1,28 @@
-// perangkat.js
+// src/pages/Perangkat.js
 
 import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
 import FilterBar from '../components/FilterBar';
 import DeviceCard from '../components/DeviceCard';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 const Perangkat = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // BAGIAN 1: State baru untuk menyimpan pesan log
+  // --- PERUBAHAN 1: State baru khusus untuk data ringkasan dari tabel sensors ---
+  const [summaryData, setSummaryData] = useState({ total: 0, active: 0, inactive: 0 });
+
   const [logMessages, setLogMessages] = useState(['[INFO] Menunggu perintah pengiriman...']);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/status_perangkat`)
+    // --- PERUBAHAN 2: Fetch data ringkasan dari endpoint baru ---
+    fetch(`/api/sensors/summary`)
+      .then(res => res.json())
+      .then(summary => setSummaryData(summary))
+      .catch(err => console.error('Gagal fetch data ringkasan:', err));
+
+    // Fetch data detail untuk DeviceCard (tetap sama seperti sebelumnya, tidak diubah)
+    fetch(`/api/status_perangkat`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -50,13 +58,11 @@ const Perangkat = () => {
       });
   }, []);
 
-  // BAGIAN 2: Fungsi baru untuk menangani klik tombol dan membuat log contoh
   const handleSendData = async () => {
     setLogMessages([`[${new Date().toLocaleTimeString()}] [INFO] Mengirim perintah ke backend untuk memulai pengiriman file CSV...`]);
     
     try {
-      // 2. Panggil endpoint baru di backend menggunakan POST
-       const response = await fetch(`${API_BASE_URL}/api/send_csv_to_training`, {
+      const response = await fetch(`/api/send_csv_to_training`, {
         method: 'POST',
       });
 
@@ -66,29 +72,26 @@ const Perangkat = () => {
 
       const result = await response.json();
 
-      // 3. Tampilkan hasil dari backend di log
       setLogMessages(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] [SUCCESS] Backend merespons: ${result.message}`]);
       if (result.details) {
           setLogMessages(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] [DETAIL] File terkirim: ${result.details.sentCount}, Gagal: ${result.details.failedCount}`]);
       }
 
     } catch (error) {
-      // 4. Tampilkan pesan error jika fetch gagal
       console.error('Gagal memicu pengiriman:', error);
       setLogMessages(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] [ERROR] Gagal terhubung ke backend: ${error.message}`]);
     }
   };
 
-
-  if (loading) return <p className="text-center mt-8">Memuat data dari server...</p>;
+  if (loading && devices.length === 0) return <p className="text-center mt-8">Memuat data dari server...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6">
-      {/* Card 4 status */}
+      {/* --- PERUBAHAN 3: Card ringkasan sekarang menggunakan state summaryData --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card title="Total Perangkat" count={devices.length} icon="fa-solid fa-laptop-code" color="bg-blue-500" />
-        <Card title="Perangkat Online" count={devices.filter(d => d.status === 'active').length} icon="fa-solid fa-wifi" color="bg-green-500" />
-        <Card title="Perangkat Offline" count={devices.filter(d => d.status !== 'active').length} icon="fa-solid fa-laptop-medical" color="bg-red-500" />
+        <Card title="Total Perangkat" count={summaryData.total} icon="fa-solid fa-laptop-code" color="bg-blue-500" />
+        <Card title="Perangkat Online" count={summaryData.active} icon="fa-solid fa-wifi" color="bg-green-500" />
+        <Card title="Perangkat Offline" count={summaryData.inactive} icon="fa-solid fa-laptop-medical" color="bg-red-500" />
         <Card title="Dalam Perawatan" count={0} icon="fa-solid fa-house-laptop" color="bg-purple-500" />
       </div>
 
@@ -96,7 +99,7 @@ const Perangkat = () => {
         <FilterBar />
       </div>
 
-      {/* Device Cards */}
+      {/* Device Cards (TIDAK ADA PERUBAHAN DI SINI) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
         {devices.map(device => (
           <DeviceCard
@@ -114,11 +117,11 @@ const Perangkat = () => {
         ))}
       </div>
 
-      {/* BAGIAN 3: UI baru untuk pengiriman data */}
+      {/* UI Pengiriman Data (TIDAK ADA PERUBAHAN DI SINI) */}
       <div className="mt-8 p-6 bg-white rounded-lg shadow-sm">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Kirim Data Pelatihan Model</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Tekan tombol di bawah untuk mengirim data terbaru dari semua perangkat ke server training.napshot data saat ini.
+          Tekan tombol di bawah untuk mengirim data terbaru dari semua perangkat ke server training. Snapshot data saat ini.
         </p>
         
         <button

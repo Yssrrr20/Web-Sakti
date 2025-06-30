@@ -7,7 +7,7 @@ import PerubahanParameter from './PerubahanParameter';
 import RiwayatAktivitas from './RiwayatAktivitas';
 import ParameterLingkungan from '../components/ParameterLingkungan';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'; // Tambahkan ini
+
 
 const Dashboard = () => {
     const [summaryData, setSummaryData] = useState(null);
@@ -18,7 +18,7 @@ const Dashboard = () => {
         const fetchSummaryData = async () => {
             try {
                 // Gunakan API_BASE_URL
-                const response = await fetch(`${API_BASE_URL}/api/summary/stats`); // Ubah di sini
+                const response = await fetch(`/api/summary/stats`); // Ubah di sini
                 if (!response.ok) {
                     throw new Error('Gagal memuat data dashboard');
                 }
