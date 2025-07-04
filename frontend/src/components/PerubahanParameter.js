@@ -25,8 +25,6 @@ function formatTimeAgo(dateString) {
 
 // Helper function untuk menentukan parameter mana yang paling menonjol
 const getMostSignificantChange = (reading) => {
-    // Anda bisa menambahkan logika lebih kompleks di sini,
-    // untuk saat ini kita tampilkan saja semua.
     return `Suhu: ${reading.temperature.toFixed(1)}°C, pH: ${reading.ph.toFixed(2)}, Lembap: ${reading.humidity.toFixed(1)}%`;
 };
 

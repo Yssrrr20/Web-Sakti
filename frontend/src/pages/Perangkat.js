@@ -2,26 +2,25 @@
 
 import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
-import FilterBar from '../components/FilterBar';
 import DeviceCard from '../components/DeviceCard';
 
 const Perangkat = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- PERUBAHAN 1: State baru khusus untuk data ringkasan dari tabel sensors ---
+  // --- State khusus untuk data ringkasan dari tabel sensors ---
   const [summaryData, setSummaryData] = useState({ total: 0, active: 0, inactive: 0 });
 
   const [logMessages, setLogMessages] = useState(['[INFO] Menunggu perintah pengiriman...']);
 
   useEffect(() => {
-    // --- PERUBAHAN 2: Fetch data ringkasan dari endpoint baru ---
+    // --- Fetch data ringkasan dari endpoint ---
     fetch(`/api/sensors/summary`)
       .then(res => res.json())
       .then(summary => setSummaryData(summary))
       .catch(err => console.error('Gagal fetch data ringkasan:', err));
 
-    // Fetch data detail untuk DeviceCard (tetap sama seperti sebelumnya, tidak diubah)
+    // Fetch data detail untuk DeviceCard 
     fetch(`/api/status_perangkat`)
       .then(res => {
         if (!res.ok) {
@@ -87,7 +86,7 @@ const Perangkat = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6">
-      {/* --- PERUBAHAN 3: Card ringkasan sekarang menggunakan state summaryData --- */}
+      {/* --- Card ringkasan menggunakan state summaryData --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card title="Total Perangkat" count={summaryData.total} icon="fa-solid fa-laptop-code" color="bg-blue-500" />
         <Card title="Perangkat Online" count={summaryData.active} icon="fa-solid fa-wifi" color="bg-green-500" />
@@ -95,11 +94,7 @@ const Perangkat = () => {
         <Card title="Dalam Perawatan" count={0} icon="fa-solid fa-house-laptop" color="bg-purple-500" />
       </div>
 
-      <div className="p-6 bg-white rounded-lg shadow-sm">
-        <FilterBar />
-      </div>
-
-      {/* Device Cards (TIDAK ADA PERUBAHAN DI SINI) */}
+      {/* Device Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
         {devices.map(device => (
           <DeviceCard
@@ -117,7 +112,7 @@ const Perangkat = () => {
         ))}
       </div>
 
-      {/* UI Pengiriman Data (TIDAK ADA PERUBAHAN DI SINI) */}
+      {/* UI Pengiriman Data */}
       <div className="mt-8 p-6 bg-white rounded-lg shadow-sm">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Kirim Data Pelatihan Model</h2>
         <p className="text-sm text-gray-600 mb-4">

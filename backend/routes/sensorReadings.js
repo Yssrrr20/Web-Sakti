@@ -9,7 +9,6 @@ const axios = require('axios');
 const FormData = require('form-data');
 const { Readable } = require('stream'); 
 
-// Endpoint untuk mengambil data perangkat (tidak berubah)
 router.get('/status_perangkat', async (req, res) => {
   try {
     const latestReadingsQuery = `

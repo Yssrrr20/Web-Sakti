@@ -12,7 +12,6 @@ const dbConnection = require('../db');
 router.get('/recent', async (req, res) => {
     try {
         // Query untuk mengambil 10 data terakhir dari soil_data,
-        // dan menggabungkannya dengan nama sensor dari tabel sensors.
         const query = `
             SELECT 
                 sd.id,

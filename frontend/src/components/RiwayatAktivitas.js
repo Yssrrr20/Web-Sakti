@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-// Helper function untuk format waktu relatif (misal: "5 menit yang lalu")
+// Helper function untuk format waktu relatif 
 function formatTimeAgo(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -29,7 +29,6 @@ const getEventStyle = (eventType, level) => {
         case 'DATA_SENT_TO_TRAINING':
             return { icon: 'fa-solid fa-file-arrow-up', color: 'text-orange-500' };
         default:
-            // Jika tidak ada tipe spesifik, gunakan level sebagai penentu
             switch (level) {
                 case 'SUCCESS':
                     return { icon: 'fa-solid fa-check-circle', color: 'text-green-500' };
@@ -68,7 +67,6 @@ export default function RiwayatAktivitas() {
         // Set interval untuk me-refresh data secara otomatis setiap 1 menit
         const intervalId = setInterval(fetchActivities, 60000);
 
-        // Cleanup interval saat komponen tidak lagi ditampilkan
         return () => clearInterval(intervalId);
     }, []);
 

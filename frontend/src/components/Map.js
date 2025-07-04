@@ -10,8 +10,7 @@ import GeoRasterLayer from 'georaster-layer-for-leaflet';
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
 
@@ -50,27 +49,28 @@ const Map = ({
   zones,
   userPosition,
   targetPosition,
-  center = [-6.5511, 106.7166], // Replaced initialCenter with center
-  zoom = 17,                     // Replaced initialZoom with zoom
+  initialCenter = [-6.5511, 106.7166],
+  initialZoom = 17,
   maxZoom = 22,
   isInteractive = true,
-  onMapChange // Prop for parent to listen to map changes
+  onMapChange, 
+  setMapCenterAndZoom 
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const geoRasterLayerRef = useRef(null);
   const treeMarkersLayerRef = useRef(null);
   const soilMarkersLayerRef = useRef(null);
-  const userMarkerRef = useRef(null);
+  const userGpsLayerRef = useRef(null); 
   const zonesLayerRef = useRef(null);
   const targetMarkerRef = useRef(null);
 
-  // Inisialisasi peta Leaflet
+  // Inisialisasi peta Leaflet (berjalan sekali saat mount)
   useEffect(() => {
     if (mapRef.current && !mapInstanceRef.current) {
       const mapOptions = {
         maxZoom: maxZoom,
-        zoomControl: isInteractive, // Show zoom controls only if interactive
+        zoomControl: isInteractive,
         dragging: isInteractive,
         scrollWheelZoom: isInteractive,
         doubleClickZoom: isInteractive,
@@ -80,40 +80,41 @@ const Map = ({
         tap: isInteractive,
       };
 
-      // Use the 'center' and 'zoom' props for initial view
-      mapInstanceRef.current = L.map(mapRef.current, mapOptions).setView(center, zoom);
+      mapInstanceRef.current = L.map(mapRef.current, mapOptions).setView(initialCenter, initialZoom);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(mapInstanceRef.current);
 
-      if(isInteractive) { // Add zoom control explicitly if interactive
+      if(isInteractive) { 
           L.control.zoom({ position: 'topright' }).addTo(mapInstanceRef.current);
       }
 
-      // Initialize layer groups
+      // Initialize layer groups (add to map only once)
       zonesLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
       treeMarkersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
       soilMarkersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
-      // User and target markers are managed directly, not in layer groups in this version for simplicity
+      userGpsLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current); 
+
+      // Set fungsi ke ref agar bisa dipanggil dari parent (Peta.js)
+      if (setMapCenterAndZoom) {
+          setMapCenterAndZoom((lat, lon, zoomLevel) => {
+              if (mapInstanceRef.current && !mapInstanceRef.current._animating) { 
+                  mapInstanceRef.current.setView([lat, lon], zoomLevel);
+              }
+          });
+      }
     }
 
-    // Cleanup function for map instance
+    // Cleanup: Pastikan peta di-remove saat komponen di-unmount
     return () => {
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
         }
     };
-  }, []); // Empty dependency array means this runs only once on mount
+  }, [initialCenter, initialZoom, maxZoom, isInteractive, setMapCenterAndZoom]);
 
-  // useEffect to dynamically update map view (center and zoom) if props change
-  // This is key for the map to follow userPosition from Analisis.jsx
-  useEffect(() => {
-    if (mapInstanceRef.current && center && zoom) {
-      mapInstanceRef.current.setView(center, zoom);
-    }
-  }, [center, zoom]); // Reruns when center or zoom props change
 
   // useEffect for onMapChange callback (if map is interactive)
   useEffect(() => {
@@ -128,23 +129,23 @@ const Map = ({
 
       map.on('moveend', handleMoveEnd);
 
-      // Trigger once on mount to provide initial view
-      handleMoveEnd();
-
       return () => {
-        map.off('moveend', handleMoveEnd);
+        map.off('moveend', handleMoveEnd); 
       };
     }
-  }, [onMapChange, isInteractive]); // Dependency: re-run if onMapChange or isInteractive prop changes
+  }, [onMapChange, isInteractive]);
 
 
   // useEffect for GeoTIFF
   useEffect(() => {
-    if (mapInstanceRef.current && geoRasterLayerRef.current) {
+    if (!mapInstanceRef.current) return;
+
+    if (geoRasterLayerRef.current) {
         mapInstanceRef.current.removeLayer(geoRasterLayerRef.current);
         geoRasterLayerRef.current = null;
     }
-    if (geoTiffUrl && mapInstanceRef.current) {
+
+    if (geoTiffUrl) {
         fetch(geoTiffUrl)
         .then(response => response.arrayBuffer())
         .then(arrayBuffer => {
@@ -152,118 +153,134 @@ const Map = ({
                 const layer = new GeoRasterLayer({ georaster, resolution: 256, opacity: 0.8 });
                 layer.addTo(mapInstanceRef.current);
                 geoRasterLayerRef.current = layer;
-                // Only fit bounds if map is interactive, otherwise it might override initial view
-                if (isInteractive) {
-                    mapInstanceRef.current.fitBounds(layer.getBounds());
-                }
             });
         }).catch(error => console.error("Gagal memuat GeoTIFF:", error));
     }
-  }, [geoTiffUrl, isInteractive]);
+  }, [geoTiffUrl]); 
 
   // useEffect for TREE data
   useEffect(() => {
-    if (treeMarkersLayerRef.current) {
-      treeMarkersLayerRef.current.clearLayers();
-      if (treeData && treeData.length > 0) {
-        treeData.forEach(tree => {
-          const statusKey = Object.keys(tree).find(key => key.toLowerCase().includes('status'));
-          const status = statusKey ? tree[statusKey] : null;
-          const markerStyle = getTreeMarkerOptions(status);
-          const lat = parseFloat(tree.gps_lat);
-          const lon = parseFloat(tree.gps_long);
-          if (!isNaN(lat) && !isNaN(lon)) {
-            L.circleMarker([lat, lon], { ...markerStyle, radius: 5, weight: 1, fillOpacity: 0.9 })
-             .bindTooltip(`<b>Pohon ID:</b> ${tree.id_pohon}<br><b>Status:</b> ${markerStyle.statusText}`)
-             .addTo(treeMarkersLayerRef.current);
-          }
-        });
-      }
+    if (!mapInstanceRef.current || !treeMarkersLayerRef.current) return;
+    treeMarkersLayerRef.current.clearLayers(); 
+    if (treeData && treeData.length > 0) {
+      treeData.forEach(tree => {
+        const statusKey = Object.keys(tree).find(key => key.toLowerCase().includes('status'));
+        const status = statusKey ? tree[statusKey] : null;
+        const markerStyle = getTreeMarkerOptions(status);
+        const lat = parseFloat(tree.gps_lat);
+        const lon = parseFloat(tree.gps_long);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          L.circleMarker([lat, lon], { ...markerStyle, radius: 5, weight: 1, fillOpacity: 0.9 })
+           .bindTooltip(`<b>Pohon ID:</b> ${tree.id_pohon}<br><b>Status:</b> ${markerStyle.statusText}`)
+           .addTo(treeMarkersLayerRef.current);
+        }
+      });
     }
   }, [treeData]);
 
   // useEffect for SOIL data
   useEffect(() => {
-    if (soilMarkersLayerRef.current) {
-      soilMarkersLayerRef.current.clearLayers();
-      if (soilData && soilData.length > 0) {
-        soilData.forEach(soilPoint => {
-          const markerStyle = getSoilMarkerOptions(soilPoint.status_prediksi);
-          const lat = parseFloat(soilPoint.gps_lat);
-          const lon = parseFloat(soilPoint.gps_long);
-          if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== -1) {
-            L.circle([lat, lon], { radius: 5, ...markerStyle, weight: 1, fillOpacity: 0.8 })
-             .bindTooltip(`<b>Data Tanah</b><br>Sensor: ${soilPoint.sensor_id}<br>Status: ${soilPoint.status_prediksi || 'Tidak Diketahui'}<br>pH: ${soilPoint.pH || 'N/A'}`)
-             .addTo(soilMarkersLayerRef.current);
-          }
-        });
-      }
+    if (!mapInstanceRef.current || !soilMarkersLayerRef.current) return;
+    soilMarkersLayerRef.current.clearLayers(); 
+    if (soilData && soilData.length > 0) {
+      soilData.forEach(soilPoint => {
+        const markerStyle = getSoilMarkerOptions(soilPoint.status_prediksi);
+        const lat = parseFloat(soilPoint.gps_lat);
+        const lon = parseFloat(soilPoint.gps_long);
+        if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== -1) {
+          L.circle([lat, lon], { radius: 5, ...markerStyle, weight: 1, fillOpacity: 0.8 })
+           .bindTooltip(`<b>Data Tanah</b><br>Sensor: ${soilPoint.sensor_id}<br>Status: ${soilPoint.status_prediksi || 'Tidak Diketahui'}<br>pH: ${soilPoint.pH || 'N/A'}`)
+           .addTo(soilMarkersLayerRef.current);
+        }
+      });
     }
   }, [soilData]);
 
   // useEffect for ZONE data
   useEffect(() => {
-    if (zonesLayerRef.current) {
-        zonesLayerRef.current.clearLayers();
-        if (zones && zones.length > 0) {
-            zones.forEach(zone => {
-                const bounds = [[zone.bounds_sw_lat, zone.bounds_sw_lng], [zone.bounds_ne_lat, zone.bounds_ne_lng]];
-                const tooltipContent = `<b>${zone.zone_name || 'Zona'}</b><br>Label: ${zone.label}<br>Total Pohon: ${zone.tree_count_total}`;
-                L.rectangle(bounds, getZoneStyle(zone.label))
-                 .bindTooltip(tooltipContent)
-                 .addTo(zonesLayerRef.current);
-            });
-        }
+    if (!mapInstanceRef.current || !zonesLayerRef.current) return;
+    zonesLayerRef.current.clearLayers(); 
+    if (zones && zones.length > 0) {
+        zones.forEach(zone => {
+            const bounds = [[zone.bounds_sw_lat, zone.bounds_sw_lng], [zone.bounds_ne_lat, zone.bounds_ne_lng]];
+            const tooltipContent = `<b>${zone.zone_name || 'Zona'}</b><br>Label: ${zone.label}<br>Total Pohon: ${zone.tree_count_total}`;
+            L.rectangle(bounds, getZoneStyle(zone.label))
+             .bindTooltip(tooltipContent)
+             .addTo(zonesLayerRef.current);
+        });
     }
   }, [zones]);
 
 
   // useEffect for USER POSITION (Farmer)
   useEffect(() => {
-    if (mapInstanceRef.current && userPosition) {
+    if (!mapInstanceRef.current || !userGpsLayerRef.current) return; 
+
+    userGpsLayerRef.current.clearLayers(); 
+    
+    if (userPosition && typeof userPosition.lat === 'number' && typeof userPosition.lon === 'number' && !isNaN(userPosition.lat) && !isNaN(userPosition.lon)) {
       const userLatLng = [userPosition.lat, userPosition.lon];
-      if (!userMarkerRef.current) {
-        userMarkerRef.current = L.marker(userLatLng, {
-          icon: L.divIcon({ className: 'user-location-marker', html: '<div class="pulsing-dot"></div>', iconSize: [20, 20] })
-        }).addTo(mapInstanceRef.current);
-        // Only set view if map is interactive or if it's the very first time user position is available
-        // We defer to the main `center` prop for non-interactive maps now, driven by Analisis.jsx
-        // if (isInteractive) {
-        //   mapInstanceRef.current.setView(userLatLng, mapInstanceRef.current.getZoom()); // Keep current zoom
-        // }
-      } else {
-        userMarkerRef.current.setLatLng(userLatLng);
-      }
-    } else if (userMarkerRef.current) {
-        // Remove marker if userPosition becomes null
-        mapInstanceRef.current.removeLayer(userMarkerRef.current);
-        userMarkerRef.current = null;
+      L.circleMarker(userLatLng, {
+        radius: 10, // Ukuran dot
+        color: "#007bff", // Warna border
+        fillColor: "#007bff", // Warna isi
+        fillOpacity: 0.7,
+        weight: 2,
+        className: 'user-location-marker-circle' // Kelas untuk gaya tambahan
+      })
+      .bindTooltip(`<b>Posisi Anda:</b><br>Lat: ${userPosition.lat.toFixed(6)}<br>Lon: ${userPosition.lon.toFixed(6)}<br>Akurasi: ${userPosition.accuracy ? userPosition.accuracy.toFixed(1) + 'm' : 'N/A'}`)
+      .addTo(userGpsLayerRef.current);
+
+      L.marker(userLatLng, {
+        icon: L.divIcon({ className: 'user-location-marker', html: '<div class="pulsing-dot"></div>', iconSize: [20, 20] })
+      }).addTo(userGpsLayerRef.current);
+
+    } else if (userGpsLayerRef.current) {
+        userGpsLayerRef.current.clearLayers();
     }
-}, [userPosition]); // Only depends on userPosition
+  }, [userPosition]); // Dependensi userPosition
 
 
-  // useEffect for TARGET POSITION (specifically for Analisis page)
+  // useEffect for TARGET POSITION
   useEffect(() => {
-      if(mapInstanceRef.current && targetPosition && !isNaN(targetPosition.lat)) {
+      if (!mapInstanceRef.current || !targetMarkerRef.current) return; 
+      targetMarkerRef.current.clearLayers(); 
+
+      if(targetPosition && typeof targetPosition.lat === 'number' && typeof targetPosition.lon === 'number' && !isNaN(targetPosition.lat) && !isNaN(targetPosition.lon)) {
           const targetLatLng = [targetPosition.lat, targetPosition.lon];
-          if(!targetMarkerRef.current) {
-              const targetIcon = L.icon({ iconUrl: '/assets/target-icon.png', iconSize: [40, 40], iconAnchor: [20, 40] });
-              targetMarkerRef.current = L.marker(targetLatLng, { icon: targetIcon }).addTo(mapInstanceRef.current);
-          } else {
-              targetMarkerRef.current.setLatLng(targetLatLng);
-          }
+          const targetIcon = L.icon({ iconUrl: '/assets/target-icon.png', iconSize: [40, 40], iconAnchor: [20, 40] });
+          L.marker(targetLatLng, { icon: targetIcon }).addTo(targetMarkerRef.current);
       } else if (targetMarkerRef.current) {
-          // Remove marker if targetPosition becomes null
-          mapInstanceRef.current.removeLayer(targetMarkerRef.current);
-          targetMarkerRef.current = null;
+          targetMarkerRef.current.clearLayers();
       }
   }, [targetPosition]);
+
 
   return (
     <>
       <style>{`
-        .user-location-marker .pulsing-dot { width: 20px; height: 20px; background-color: #007bff; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 rgba(0, 123, 255, 0.4); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); } }
+        /* Gaya untuk lingkaran GPS pengguna */
+        .user-location-marker-circle {
+          box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3); /* Efek halo */
+          animation: gpsPulse 2s infinite;
+        }
+        @keyframes gpsPulse {
+          0% { box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3); }
+          70% { box-shadow: 0 0 0 15px rgba(0, 123, 255, 0); }
+          100% { box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3); }
+        }
+
+        /* Gaya untuk dot pulsing internal (jika digunakan bersama lingkaran) */
+        .user-location-marker .pulsing-dot { 
+          width: 20px; height: 20px; background-color: #007bff; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 rgba(0, 123, 255, 0.4); 
+          animation: dotPulse 2s infinite; /* Ubah nama animasi agar tidak konflik */
+        }
+        @keyframes dotPulse { 
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); } 
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); } 
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); } 
+        }
+
         .leaflet-tooltip { background-color: rgba(255, 255, 255, 0.9); border: 1px solid #ccc; box-shadow: 0 1px 3px rgba(0,0,0,0.4); border-radius: 4px; }
         /* Ensure Leaflet attribution is readable on all backgrounds */
         .leaflet-control-attribution a { color: #007bff !important; }

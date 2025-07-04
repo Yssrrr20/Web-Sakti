@@ -21,11 +21,10 @@ const Header = ({ setIsMenuOpen }) => {
     }`;
 
   return (
-    // Pastikan header adalah 'fixed' dengan 'top-0', 'w-full', 'h-16', dan z-index sangat tinggi
     <header className="fixed top-0 w-full h-16 bg-white p-4 shadow-md z-[999] flex items-center">
       {/* Logo dan Nama */}
       <div className="flex items-center space-x-2 flex-grow justify-start">
-        <img src="/assets/Vector (1).png" alt="Palmwatch Logo" className="w-10 h-10" />
+        <img src="/assets/LOGO.png" alt="Palmwatch Logo" className="w-10 h-10" />
         <span className="text-2xl font-bold text-green-600">SAKTI</span>
       </div>
 
@@ -37,9 +36,6 @@ const Header = ({ setIsMenuOpen }) => {
         <Link to="/peta" className={navLinkClass('/peta')}>
           Peta
         </Link>
-        <Link to="/analisis" className={navLinkClass('/analisis')}>
-          Analisis
-        </Link>
         <Link to="/perangkat" className={navLinkClass('/perangkat')}>
           Perangkat
         </Link>
@@ -47,7 +43,6 @@ const Header = ({ setIsMenuOpen }) => {
 
       {/* Placeholder/Penyeimbang untuk Desktop */}
       <div className="hidden lg:flex flex-grow justify-end">
-          {/* Ini untuk menyeimbangkan ruang yang diambil oleh div logo di sisi kiri */}
       </div>
 
       {/* Hamburger Menu untuk tampilan Mobile */}
@@ -66,9 +61,6 @@ const Header = ({ setIsMenuOpen }) => {
           </Link>
           <Link to="/peta" className={`${navLinkClass('/peta')} py-2`}>
             Peta
-          </Link>
-          <Link to="/analisis" className={`${navLinkClass('/analisis')} py-2`}>
-            Analisis
           </Link>
           <Link to="/perangkat" className={`${navLinkClass('/perangkat')} py-2`}>
             Perangkat

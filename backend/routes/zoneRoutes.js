@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const dbConnection = require('../db'); // Asumsi db.js sudah mengelola koneksi database
+const dbConnection = require('../db'); 
 
 /**
  * @route   GET /api/zones
@@ -14,8 +14,6 @@ const dbConnection = require('../db'); // Asumsi db.js sudah mengelola koneksi d
 router.get('/', async (req, res) => {
     try {
         // Query untuk mengambil data dari tabel 'map_zones'.
-        // Kita perlu menghitung titik tengah zona dari batas-batasnya (bounds)
-        // karena Analisis.jsx mengharapkan 'lat' dan 'lon' tunggal untuk koordinat tugas.
         const query = `
             SELECT
                 id,
@@ -40,7 +38,7 @@ router.get('/', async (req, res) => {
 
         const [results] = await dbConnection.query(query);
 
-        // Jika ada data, kirim sebagai JSON
+        
         if (results.length > 0) {
             res.json(results);
         } else {
@@ -145,7 +143,6 @@ router.post('/generate-grid', async (req, res) => {
         }
         console.log(`[ZONING] Proses penyimpanan zona selesai.`);
 
-        // Lakukan logging ke 'activity_log' SEBELUM mengirim respons
         const logMessage = `Analisis zona baru berhasil dibuat, menghasilkan ${zonesCreatedCount} zona.`;
         const logDetails = JSON.stringify({ zones_created: zonesCreatedCount });
         await dbConnection.query(
@@ -154,12 +151,10 @@ router.post('/generate-grid', async (req, res) => {
         );
         console.log("[LOGGING] Aktivitas analisis zona berhasil dicatat.");
 
-        // Kirim respons ke klien di akhir proses
         res.status(201).json({ message: logMessage });
 
     } catch (error) {
         console.error("Gagal membuat zona:", error);
-        // Pastikan hanya mengirim satu respons error
         if (!res.headersSent) {
             res.status(500).json({ error: "Gagal melakukan analisis zona." });
         }

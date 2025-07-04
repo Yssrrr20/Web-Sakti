@@ -14,7 +14,6 @@ const summaryRoutes = require('./routes/summaryRoutes');
 const zoneRoutes = require('./routes/zoneRoutes');
 const soilRoutes = require('./routes/soilRoutes'); 
 const activityLogRoutes = require('./routes/activityLogRoutes');
-const tileServerRoutes = require('./routes/tileServerRoutes');
 const mapDataRoutes = require('./routes/mapDataRoutes');
 const sensorSummaryRoutes = require('./routes/sensorRoutes');
 
@@ -27,12 +26,18 @@ const corsOptions = {
     'http://localhost:3001', 
     'http://localhost:3002',
     'http://192.168.79.41:3000',
-    'https://f9a0-120-188-78-222.ngrok-free.app' // <-- TAMBAHKAN BARIS INI (Ganti IP jika perlu)
+    'https://ofj8rmy9erlr.share.zrok.io' 
   ],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use('/api', (req, res, next) => { // Hanya terapkan pada rute /api
+  // Izinkan cache publik selama 1 hari (86400 detik)
+  // Atau lebih lama, misalnya 7 hari (604800) atau 30 hari (2592000)
+  res.setHeader('Cache-Control', 'public, max-age=86400'); 
+  next();
+});
 app.use('/public', express.static(path.join(__dirname, 'data_diterima')));
 
 const RAW_CSV_DIR = path.join(__dirname, 'data_csv', 'raw');
@@ -44,7 +49,7 @@ fs.ensureDirSync(PROCESSED_CSV_DIR);
 fs.ensureDirSync(ERROR_CSV_DIR);
 
 
-// --- Konfigurasi MQTT (tetap sama) ---
+// --- Konfigurasi MQTT  ---
 const MQTT_BROKER_URL = 'mqtt://20.5.160.109:1883';
 const MQTT_TOPIC_CSV = 'sensor/data/csv_raw';
 
@@ -67,7 +72,7 @@ client.on('reconnect', () => console.log('Mencoba menghubungkan ulang ke MQTT Br
 client.on('close', () => console.log('Koneksi MQTT ditutup.'));
 
 
-// ===== LOGIKA BATCHING BARU =====
+// ===== LOGIKA BATCHING =====
 let messageBuffer = [];
 let processingTimeout = null; 
 const BATCH_WINDOW_MS = 3000;
@@ -153,7 +158,7 @@ client.on('message', async (topic, message) => {
         processingTimeout = setTimeout(processBatch, BATCH_WINDOW_MS);
     }
 });
-// ===== AKHIR LOGIKA BATCHING BARU =====
+// ===== AKHIR LOGIKA BATCHING =====
 
 
 // --- Pendaftaran Routing HTTP ---
@@ -167,7 +172,6 @@ app.use('/api/summary', summaryRoutes);
 app.use('/api/zones', zoneRoutes);
 app.use('/api/soil', soilRoutes);
 app.use('/api/activity', activityLogRoutes);
-app.use('/api/tiles', tileServerRoutes);
 console.log("[index.js] Memasang mapDataRoutes di /api/map-data");
 app.use('/api/map-data', mapDataRoutes);
 app.use('/api/sensors', sensorSummaryRoutes);

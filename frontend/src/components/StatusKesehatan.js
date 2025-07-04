@@ -38,14 +38,13 @@ export default function StatusKesehatan() {
     const fetchHealthData = async () => {
       try {
         setLoading(true);
-        // Panggil endpoint statistik kita (menggunakan proxy)
         const response = await fetch(`/api/summary/stats`);
         if (!response.ok) {
           throw new Error(`Gagal mengambil data: ${response.statusText}`);
         }
         const data = await response.json();
 
-        // Siapkan data untuk pie chart
+        // Data untuk pie chart
         const formattedData = [
           { label: 'Sehat', value: parseInt(data.pohonSehat) || 0, color: '#22c55e' },
           { label: 'Terinfeksi', value: parseInt(data.pohonSakit) || 0, color: '#ef4444' },
@@ -64,9 +63,8 @@ export default function StatusKesehatan() {
     };
 
     fetchHealthData();
-  }, []); // Array dependensi kosong agar hanya berjalan sekali
+  }, []); 
 
-  // Tampilkan pesan loading
   if (loading) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-lg w-full h-full flex justify-center items-center" style={{height: `${size.height + 100}px`}}>

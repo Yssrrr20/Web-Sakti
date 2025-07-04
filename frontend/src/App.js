@@ -5,13 +5,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard.jsx';
 import PetaPage from './pages/Peta.js';
-import Analisis from './pages/Analisis.jsx';
 import Perangkat from './pages/Perangkat.js';
 
 function App() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
-  // PERUBAHAN 2: Tambahkan hook useEffect untuk pre-caching data API
+  // hook useEffect untuk pre-caching data API
   useEffect(() => {
     // Fungsi ini akan dijalankan satu kali setelah komponen App pertama kali dimuat
     const preCacheApiData = () => {
@@ -24,7 +23,7 @@ function App() {
         '/api/sensors/summary',
         '/api/receiver/hasil-peta',
         '/api/receiver/hasil-csv',
-        '/api/activity',
+        '/api/activity/recent',
         '/api/map-data/trees/all-health', 
         '/api/map-data/soil/all-data',    
         '/api/soil/recent',               
@@ -41,19 +40,15 @@ function App() {
             }
           })
           .catch(err => {
-            // Error ini wajar terjadi jika pengguna sudah offline saat pre-cache berjalan
-            // jadi kita tidak perlu menampilkannya sebagai error besar.
             console.log(`[Pre-cache] Gagal fetch (kemungkinan offline): ${apiPath}`);
           });
       });
     };
 
-    // Kita panggil setelah sedikit jeda agar tidak mengganggu pemuatan utama halaman.
     const timer = setTimeout(() => {
       preCacheApiData();
     }, 3000); // Jeda 3 detik
 
-    // Cleanup timer jika komponen di-unmount sebelum timer selesai
     return () => clearTimeout(timer); 
   }, []); // Array kosong `[]` memastikan efek ini hanya berjalan sekali saat aplikasi pertama kali dimuat.
 
@@ -67,7 +62,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/peta" element={<PetaPage />} />
-            <Route path="/analisis" element={<Analisis />} />
             <Route path="/perangkat" element={<Perangkat />} />
           </Routes>
         </main>

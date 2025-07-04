@@ -18,7 +18,7 @@ const Dashboard = () => {
         const fetchSummaryData = async () => {
             try {
                 // Gunakan API_BASE_URL
-                const response = await fetch(`/api/summary/stats`); // Ubah di sini
+                const response = await fetch(`/api/summary/stats`); 
                 if (!response.ok) {
                     throw new Error('Gagal memuat data dashboard');
                 }

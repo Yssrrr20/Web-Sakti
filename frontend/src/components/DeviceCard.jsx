@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-// Komponen lokal untuk baris data (tidak berubah)
 const SensorRow = ({ icon, label, value, valueColor = "text-gray-900" }) => (
   <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
     <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -13,14 +12,11 @@ const SensorRow = ({ icon, label, value, valueColor = "text-gray-900" }) => (
 
 export default function DeviceCard({
   name,
-  block,
-  online,
-  battery,
   ph,
   temperature,
   humidity,
   lastUpdate,
-  history, // Prop history ditambahkan kembali
+  history, 
 }) {
   // State untuk mengontrol tampilan riwayat
   const [isOpen, setIsOpen] = useState(false);
@@ -30,13 +26,11 @@ export default function DeviceCard({
     setIsOpen(!isOpen);
   };
 
-  const batteryColor =
-    battery > 50 ? "text-green-500" : battery > 20 ? "text-yellow-500" : "text-red-500";
 
   return (
     <div 
       className="bg-white rounded-2xl shadow-md p-4 sm:p-6 flex flex-col cursor-pointer transition-all duration-300 hover:shadow-lg"
-      onClick={handleToggle} // Tambahkan onClick di kartu utama
+      onClick={handleToggle} 
     >
       {/* Header Kartu */}
       <div className="flex items-start justify-between mb-4">
@@ -55,7 +49,7 @@ export default function DeviceCard({
         <SensorRow icon="fas fa-flask" label="pH Tanah" value={ph} />
       </div>
 
-      {/* BAGIAN BARU: Tampilan Riwayat (muncul saat isOpen true) */}
+      {/* Tampilan Riwayat (muncul saat isOpen true) */}
       {isOpen && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <h4 className="font-bold text-sm text-gray-700 mb-2">Riwayat Pengambilan Data</h4>
@@ -104,7 +98,6 @@ export default function DeviceCard({
         <div className="flex items-center gap-3 text-base">
           <button className="hover:text-blue-500 focus:outline-none"><i className="fas fa-repeat"></i></button>
           <button className="hover:text-blue-500 focus:outline-none"><i className="fas fa-gear"></i></button>
-          {/* Ikon panah sebagai indikator buka/tutup */}
           <i className={`fas fa-chevron-down transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
         </div>
       </div>

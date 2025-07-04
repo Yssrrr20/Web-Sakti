@@ -12,7 +12,7 @@ const DashboardStats = () => {
         const fetchStats = async () => {
             try {
                 // Gunakan API_BASE_URL
-                const response = await fetch(`/api/summary/stats`); // Ubah di sini
+                const response = await fetch(`/api/summary/stats`); 
                 if (!response.ok) {
                     throw new Error(`Gagal mengambil data: ${response.statusText}`);
                 }

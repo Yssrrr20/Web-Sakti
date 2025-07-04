@@ -2,11 +2,11 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // Pastikan path ke koneksi database Anda benar
+const db = require('../db'); 
 
 router.get('/summary', async (req, res) => {
     try {
-        // Query ini hanya mengambil data dari tabel sensors
+        // Query mengambil data dari tabel sensors
         const query = "SELECT status, COUNT(*) as count FROM sensors GROUP BY status";
         const [rows] = await db.query(query);
 

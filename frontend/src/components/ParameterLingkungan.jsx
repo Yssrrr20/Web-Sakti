@@ -2,7 +2,6 @@
 
 import React from 'react';
 
-// Ini adalah komponen "dumb" yang hanya menerima data melalui props.
 const ParameterLingkungan = ({ temperature, ph, humidity }) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -16,7 +15,6 @@ const ParameterLingkungan = ({ temperature, ph, humidity }) => {
         <div>
           <p className="text-lg font-semibold text-gray-800">Suhu</p>
           <p className="text-2xl font-bold text-blue-500">
-            {/* Tampilkan data atau pesan loading/error */}
             {temperature ? `${parseFloat(temperature).toFixed(1)} °C` : 'N/A'}
           </p>
         </div>

@@ -55,7 +55,6 @@ router.post('/terima-hasil-lengkap', (req, res) => {
                 return res.status(401).json({ error: "Unauthorized: API Key tidak valid atau tidak ada." });
             }
 
-            // --- PERBAIKAN 1: Definisikan dan isi array receivedFiles ---
             const receivedFiles = [];
             if (req.files.tree_csv_file) receivedFiles.push(req.files.tree_csv_file[0].filename);
             if (req.files.soil_csv_file) receivedFiles.push(req.files.soil_csv_file[0].filename);
@@ -76,7 +75,6 @@ router.post('/terima-hasil-lengkap', (req, res) => {
             const results = await Promise.allSettled(processingPromises);
             console.log("[PROCESS] Semua proses file selesai.");
 
-            // --- PERBAIKAN 2: Lakukan logging SEBELUM mengirim respons ---
             if (receivedFiles.length > 0) {
                 const logMessage = `Berhasil menerima ${receivedFiles.length} file: ${receivedFiles.join(', ')}.`;
                 const logDetails = JSON.stringify({ files: receivedFiles });
@@ -87,7 +85,6 @@ router.post('/terima-hasil-lengkap', (req, res) => {
                 console.log("[LOGGING] Aktivitas penerimaan file berhasil dicatat.");
             }
 
-            // Kirim respons di akhir
             res.status(200).json({
                 message: "Semua file yang diterima telah selesai diproses.",
                 results: results.map(result => result.status === 'fulfilled' ? { status: 'success', data: result.value } : { status: 'failed', error: result.reason.message })
@@ -101,7 +98,6 @@ router.post('/terima-hasil-lengkap', (req, res) => {
     });
 });
 
-// Endpoint lainnya (tidak perlu diubah)
 router.get('/hasil-peta', async (req, res) => {
   try {
     const files = await fs.readdir(MAP_UPLOAD_DIR);

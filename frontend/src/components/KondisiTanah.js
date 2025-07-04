@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-// Helper function untuk mendapatkan warna dan teks status yang sesuai
+// Helper function untuk warna dan teks status 
 const getZoneStyle = (label) => {
     switch (label) {
         case 'Zona Prioritas Merah':
@@ -31,7 +31,6 @@ export default function KondisiTanah() {
                 }
                 const data = await response.json();
 
-                // --- PERUBAHAN DI SINI: Mengurutkan berdasarkan nama zona ---
                 data.sort((a, b) => {
                     // Ekstrak angka dari string "Zona X"
                     const numA = parseInt(a.zone_name.split(' ')[1] || 0);
@@ -64,12 +63,11 @@ export default function KondisiTanah() {
     }
 
     return (
-        // Wrapper div dengan scroll vertikal jika konten melebihi tinggi
+
         <div className="space-y-3 overflow-y-auto h-full pr-2 flex-grow">
             {zones.map(zone => {
                 const style = getZoneStyle(zone.label);
                 return (
-                    // Setiap item di daftar
                     <div key={zone.id} className="bg-slate-100 p-4 rounded-lg flex items-center justify-between transition-all hover:shadow-md cursor-pointer">
                         <div>
                             <p className="text-lg font-semibold text-gray-800">{zone.zone_name}</p>
